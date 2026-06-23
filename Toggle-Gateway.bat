@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 cls
 
@@ -24,6 +24,10 @@ if %errorlevel% == 0 (
     echo Gateway is RUNNING. Stopping it now...
     docker compose down
     echo.
+    echo Restoring normal internet (1.1.1.1). Administrator permissions required.
+    netsh interface ipv4 set dnsservers "Wi-Fi" static 1.1.1.1 primary >nul 2>&1
+    netsh interface ipv4 set dnsservers "Ethernet" static 1.1.1.1 primary >nul 2>&1
+    echo.
     echo Gateway has been STOPPED.
 ) else (
     echo.
@@ -37,6 +41,20 @@ if %errorlevel% == 0 (
     )
 
     docker compose up -d
+    
+    if exist "ADGUARD_IP.txt" (
+        set /p TS_IP=<ADGUARD_IP.txt
+        if not "!TS_IP!"=="" (
+            echo.
+            echo Hijacking DNS to route through AdGuard ^(!TS_IP!^). Administrator permissions required.
+            netsh interface ipv4 set dnsservers "Wi-Fi" static !TS_IP! primary >nul 2>&1
+            netsh interface ipv4 set dnsservers "Ethernet" static !TS_IP! primary >nul 2>&1
+        )
+    ) else (
+        echo.
+        echo Tip: To automatically hijack DNS, create an 'ADGUARD_IP.txt' file containing only your Tailscale IP.
+    )
+
     echo.
     echo Gateway has been STARTED.
 )

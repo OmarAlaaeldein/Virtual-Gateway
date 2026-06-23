@@ -81,6 +81,9 @@ For convenience (e.g., temporarily disabling the gateway for gaming), this repos
   osacompile -o "Toggle Gateway.app" Toggle-Gateway.applescript
   ```
   This creates a beautiful, self-contained app in the current directory. You can then right-click it and choose "Make Alias", and drag that alias to your Desktop for quick access. This ensures it intelligently toggles the Docker gateway and the Colima VM on or off from the correct folder.
+  
+  **Automatic DNS Hijacking:** To ensure you maintain complete control of your DNS, create a text file named `ADGUARD_IP.txt` in the same directory and paste just your Tailscale IP address inside it (e.g. `100.x.x.x`). This is specifically required on macOS because the system often maintains a persistent list of default DNS servers that cannot be easily removed. The only reliable way to override them is to actively write your new AdGuard DNS IP over them so that AdGuard can intercept requests, block ads, and hand off any remaining legitimate traffic securely through the Tailscale mesh, which then routes it out through the Cloudflare WARP tunnel. The macOS script will then automatically update your Mac's Wi-Fi DNS to route through AdGuard when toggled ON, and revert it to 1.1.1.1 when toggled OFF.
+  
 - **Windows:** Simply double-click the `Toggle-Gateway.bat` script included in the root of the project. It natively hooks into Docker Desktop to cleanly toggle the gateway state without requiring manual command line input.
 
 ## 7. Networking Notes
