@@ -18,6 +18,11 @@ services:
       - WIREGUARD_PORT=443
       # MTU Fix (Critical): Prevent packet fragmentation from double-encryption
       - WIREGUARD_MTU=1280
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+    volumes:
+      - ./post-rules.txt:/iptables/post-rules.txt
     restart: unless-stopped
 
   tailscale:
