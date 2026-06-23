@@ -16,7 +16,7 @@ services:
       - WIREGUARD_ENDPOINT_PORT=2408
       # MTU Fix (Critical): Prevent packet fragmentation from double-encryption
       - WIREGUARD_MTU=1280
-      # Split-Trust DNS: Distribute DNS queries among multiple privacy providers
+      # Latency-based DNS load balancing: Queries multiple privacy providers and uses the fastest response
       - DOT_PROVIDERS=quad9,cloudflare
     sysctls:
       - net.ipv4.ip_forward=1
@@ -31,7 +31,7 @@ services:
         max-file: "3"
 
   tailscale:
-    image: tailscale/tailscale:latest
+    image: tailscale/tailscale:v1.80.0
     container_name: tailscale
     network_mode: service:warp
     depends_on:
@@ -58,7 +58,7 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     volumes:
-      - ./tailscale-state:/var/lib/tailscale
+      - tailscale_state:/var/lib/tailscale
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -67,7 +67,7 @@ services:
         max-file: "3"
 
   routing-fix:
-    image: alpine:latest
+    image: alpine:3.20
     container_name: routing-fix
     network_mode: service:warp
     pid: "service:tailscale"
@@ -100,3 +100,6 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
+
+volumes:
+  tailscale_state:

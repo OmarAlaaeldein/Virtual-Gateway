@@ -10,3 +10,7 @@ tailscale-state/
 
 # Binaries
 wgcf
+
+# macOS App bundles
+*.app/
+*.app

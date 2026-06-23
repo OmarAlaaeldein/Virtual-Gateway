@@ -64,9 +64,9 @@ For convenience (e.g., temporarily disabling the gateway for gaming), this repos
 
 - **macOS:** You can dynamically compile the provided `Toggle-Gateway.applescript` source code into a fully native, clickable macOS Application by running:
   ```bash
-  osacompile -o ~/Desktop/"Toggle Gateway.app" Toggle-Gateway.applescript
+  osacompile -o "Toggle Gateway.app" Toggle-Gateway.applescript
   ```
-  This creates a beautiful, self-contained app on your Desktop that intelligently toggles the Docker gateway and the Colima VM on or off.
+  This creates a beautiful, self-contained app in the current directory. You can then right-click it and choose "Make Alias", and drag that alias to your Desktop for quick access. This ensures it intelligently toggles the Docker gateway and the Colima VM on or off from the correct folder.
 - **Windows:** Simply double-click the `Toggle-Gateway.bat` script included in the root of the project. It natively hooks into Docker Desktop to cleanly toggle the gateway state without requiring manual command line input.
 
 ## 6. Networking Notes
