@@ -62,3 +62,25 @@ docker compose up -d
 
 - **Port Usage**: Tailscale and WARP use entirely different internal ports, preventing any conflicts. Tailscale operates on random/dynamic UDP ports for its peer-to-peer mesh connections. Meanwhile, WARP's internal WireGuard interface is explicitly bound to port 443 to help obfuscate traffic and bypass strict firewalls.
 - **No Exposed Host Ports**: Because all communication relies purely on outbound tunnels, this Docker Gateway does not map or expose any ports to your local host machine.
+
+## 6. Architecture & Security Insights
+
+This setup implements a highly secure, zero-trust "Tunnel-in-Tunnel" architecture by aggressively routing a Tailscale Exit Node directly through a Gluetun-managed Cloudflare WARP tunnel.
+
+### Traffic Flow & Double Encryption
+1. **Device to Gateway (Tailscale):** Traffic leaving your client device (e.g., your phone) is encrypted using Tailscale's WireGuard implementation. It travels securely over the internet or cellular network to your Docker Gateway.
+2. **Gateway to Internet (Cloudflare WARP):** Inside the Docker network namespace, the Tailscale container passes the decrypted traffic to the Gluetun container. Gluetun immediately re-encrypts the traffic using standard WireGuard and forces it out through Cloudflare WARP's infrastructure.
+
+This creates a **Double Encryption** scenario. While this inherently introduces a slight latency penalty due to the encryption overhead and geographical routing (bouncing to your home gateway before routing to the broader internet), it ensures total privacy from local ISPs, public Wi-Fi administrators, and even the host network itself.
+
+### Threat Model & Trust Assumptions
+By utilizing this architecture, the attack surface is drastically minimized. The security of your internet traffic relies solely on two assumptions:
+1. **Physical Mesh Integrity:** Your physical devices (phone, host computer) and their private keys are not compromised.
+2. **Cloudflare Integrity:** Cloudflare WARP is not compromised and does not maliciously log or intercept your decrypted exit traffic.
+
+Because traffic is heavily encrypted before it ever touches a public network, local network threats (like man-in-the-middle attacks on cafe Wi-Fi) are entirely neutralized. 
+
+### Advanced Routing Hacks (Under the Hood)
+Building this required navigating intense firewall and routing conflicts between two VPN clients fighting for control over the same network stack:
+- **IPv6 Forwarding Bug:** Tailscale aggressively checks both IPv4 and IPv6 forwarding statuses in the kernel. If Docker disables IPv6 forwarding by default, Tailscale silently disables its Exit Node functionality. This is bypassed by explicitly setting `net.ipv6.conf.all.forwarding=1` in the Compose file.
+- **Strict Firewall Loops:** Gluetun's strict leak-prevention firewall (`iptables-nft`) intentionally drops unrecognized forwarded traffic. Furthermore, its policy routing forces all returning traffic out the `tun0` (WARP) interface, creating a blackhole for returning Tailscale packets. This was resolved by deploying an automated sidecar container (`routing-fix`) that persistently injects a high-priority `ip rule` (`ip rule add to 100.64.0.0/10 lookup 52 pref 99`), ensuring returning packets bypass the VPN blackhole and flow back into the Tailscale mesh.
