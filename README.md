@@ -74,11 +74,9 @@ This setup implements a highly secure, zero-trust "Tunnel-in-Tunnel" architectur
 This creates a **Double Encryption** scenario. While this inherently introduces a slight latency penalty due to the encryption overhead and geographical routing (bouncing to your home gateway before routing to the broader internet), it ensures total privacy from local ISPs, public Wi-Fi administrators, and even the host network itself.
 
 ### Threat Model & Trust Assumptions
-By utilizing this architecture, the attack surface is drastically minimized. The security of your internet traffic relies solely on two assumptions:
+While this architecture effectively neutralizes local network threats (like man-in-the-middle attacks on cafe Wi-Fi) because traffic is heavily encrypted before touching a public network, it introduces a significant trust assumption:
 1. **Physical Mesh Integrity:** Your physical devices (phone, host computer) and their private keys are not compromised.
-2. **Cloudflare Integrity:** Cloudflare WARP is not compromised and does not maliciously log or intercept your decrypted exit traffic.
-
-Because traffic is heavily encrypted before it ever touches a public network, local network threats (like man-in-the-middle attacks on cafe Wi-Fi) are entirely neutralized. 
+2. **Cloudflare Integrity:** You are fully trusting Cloudflare not to maliciously log, intercept, or correlate your WARP connection with your decrypted exit traffic. This is a non-trivial assumption for a serious threat model.
 
 ### Advanced Routing Hacks (Under the Hood)
 Building this required navigating intense firewall and routing conflicts between two VPN clients fighting for control over the same network stack:
