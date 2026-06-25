@@ -82,7 +82,9 @@ For convenience (e.g., temporarily disabling the gateway for gaming), this repos
   ```
   This creates a beautiful, self-contained app in the current directory. You can then right-click it and choose "Make Alias", and drag that alias to your Desktop for quick access. This ensures it intelligently toggles the Docker gateway and the Colima VM on or off from the correct folder.
   
-  **Automatic DNS Hijacking:** To ensure you maintain complete control of your DNS, create a text file named `ADGUARD_IP.txt` in the same directory and paste just your Tailscale IP address inside it (e.g. `100.x.x.x`). This is specifically required on macOS because the system often maintains a persistent list of default DNS servers that cannot be easily removed. The only reliable way to override them is to actively write your new AdGuard DNS IP over them so that AdGuard can intercept requests, block ads, and hand off any remaining legitimate traffic securely through the Tailscale mesh, which then routes it out through the Cloudflare WARP tunnel. The macOS script will then automatically update your Mac's Wi-Fi DNS to route through AdGuard when toggled ON, and revert it to 1.1.1.1 when toggled OFF.
+  **Automatic DNS Hijacking:** To ensure you maintain complete control of your DNS, create a text file named `ADGUARD_IP.txt` in the same directory and paste just your Tailscale IP address inside it (e.g. `100.x.x.x`). This is specifically required on macOS because the system often maintains a persistent list of default DNS servers that cannot be easily removed. The only reliable way to override them is to actively write your new AdGuard DNS IP over them so that AdGuard can intercept requests, block ads, and hand off any remaining legitimate traffic securely through the Tailscale mesh, which then routes it out through the Cloudflare WARP tunnel. 
+  
+  *Important Note on Routing:* The macOS script will automatically run `tailscale up` to ensure your Mac's host device is connected to the Tailscale mesh. This is critical—if the underlying Mac isn't connected to Tailscale, the Wi-Fi interface cannot route to the AdGuard container's `100.x.y.z` IP, meaning your device would lose internet access entirely. Once Tailscale is running, the script successfully updates your Mac's Wi-Fi DNS to route through AdGuard when toggled ON, and reverts it to 1.1.1.1 when toggled OFF.
   
 - **Windows:** Simply double-click the `Toggle-Gateway.bat` script included in the root of the project. It natively hooks into Docker Desktop to cleanly toggle the gateway state without requiring manual command line input.
 
@@ -117,12 +119,10 @@ Building this required navigating intense firewall and routing conflicts between
 - **macOS Memory Overhead (Colima):** Because macOS cannot run Linux containers natively, Colima must spin up a background Linux VM. While the actual containers (`warp`, `tailscale`, `routing-fix`) only consume roughly `~75MB` of RAM combined, loading massive blocklists into AdGuard Home requires significant memory. We recommend running the VM stably at `0.6 GB` (614MB) of RAM (`colima start --memory 0.6`). Attempting to aggressively starve the VM to `0.3 GB` (300MB) will trigger an out-of-memory (`OOMKilled`) crash loop on the `adguardhome` container during initialization.
 
 ## 9. Custom Ad-Blocking Rules Engine
-This gateway includes a Python utility to let you easily manage your own custom blacklists and whitelists without needing to learn strict AdGuard syntax.
+This gateway includes a self-contained Python utility to manage your own black/whitelist rules **and** subscribe to high-quality remote DNS blocklists — without needing to learn strict AdGuard syntax. It is zero-dependency (Python standard library only).
 
 1. Add domains you want to block to `black_list.txt` (e.g., `doubleclick.net`).
-2. Add domains you want to forcefully allow to `white_list.txt` (e.g., `weather-analytics-events.apple.com`).
-3. Run `python3 sync-rules.py` in your terminal. This script automatically resolves any contradictions (whitelists take priority) and compiles the rules into `adguard/work/userfilters/compiled_rules.txt`.
-4. Inside AdGuard Home, navigate to **Filters -> DNS Blocklists -> Add custom list** and point the URL to `file:///opt/adguardhome/work/userfilters/compiled_rules.txt`.
+2. Add domains you want to forcefully allow to `white_list.txt` (e.g., `weather-analytics-events.apple.com`). Whitelists *always* win — they override every block source below.
 
 ## 10. Future Work
 - **Native Linux Deployment:** Test and benchmark the architecture on a native Linux host (e.g., Raspberry Pi) to verify the native `~75MB` raw container footprint without the macOS hypervisor overhead.
