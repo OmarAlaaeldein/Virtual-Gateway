@@ -10,16 +10,21 @@ OUTPUT_PATH = "adguard/work/userfilters/compiled_rules.txt"
 PROFILES = {
     "light": [
         "https://raw.githubusercontent.com/anudeepND/blacklist/master/adservers.txt",
+        "https://raw.githubusercontent.com/anudeepND/blacklist/master/facebook.txt",
         "https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt",
         "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/light.txt"
     ],
     "medium": [
         "https://raw.githubusercontent.com/anudeepND/blacklist/master/adservers.txt",
+        "https://raw.githubusercontent.com/anudeepND/blacklist/master/facebook.txt",
+        "https://raw.githubusercontent.com/lightswitch05/hosts/master/docs/lists/facebook-extended.txt",
         "https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt",
         "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/multi.txt"
     ],
     "heavy": [
         "https://raw.githubusercontent.com/anudeepND/blacklist/master/adservers.txt",
+        "https://raw.githubusercontent.com/anudeepND/blacklist/master/facebook.txt",
+        "https://raw.githubusercontent.com/lightswitch05/hosts/master/docs/lists/facebook-extended.txt",
         "https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt",
         "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.txt",
         "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
@@ -108,6 +113,11 @@ def optimize_subdomains(domains, list_name="blocklist"):
         
     optimized = set()
     for domain in domains:
+        # Skip subdomain optimization if the rule contains custom AdGuard syntax
+        if any(char in domain for char in ('|', '^', '@', '$', '/')):
+            optimized.add(domain)
+            continue
+            
         parts = domain.split('.')
         has_parent = False
         # Check parent domains (e.g., b.c.com and c.com for a.b.c.com)
@@ -166,11 +176,18 @@ def main():
         
         f.write("! --- Blacklist Rules ---\n")
         for domain in sorted(black_list):
-            f.write(f"||{domain}^\n")
+            if domain.startswith('/') or domain.startswith('|') or domain.endswith('|') or domain.endswith('^'):
+                f.write(f"{domain}\n")
+            else:
+                f.write(f"||{domain}^\n")
             
         f.write("\n! --- Whitelist Rules ---\n")
         for domain in sorted(white_list):
-            f.write(f"@@||{domain}^\n")
+            if domain.startswith('/') or domain.startswith('|') or domain.endswith('|') or domain.endswith('^') or domain.startswith('@@'):
+                rule = domain if domain.startswith('@@') else f"@@{domain}"
+                f.write(f"{rule}\n")
+            else:
+                f.write(f"@@||{domain}^\n")
 
     print(f"\nSuccessfully compiled {len(black_list)} block rules and {len(white_list)} allow rules to {OUTPUT_PATH}")
 

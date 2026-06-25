@@ -9,7 +9,9 @@ ads-sg.tiktok.com
 ads.tiktok.com
 adserver.unityads.unity3d.com
 adsfs.oppomobile.com
-an.facebook.com
+an.facebook.com$important
+connect.facebook.net$important
+pixel.facebook.com$important
 analytics.query.yahoo.com
 analytics.s3.amazonaws.com
 analytics.spotify.com
